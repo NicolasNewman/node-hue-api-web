@@ -1,5 +1,3 @@
-import * as https from 'https';
-
 import {Api} from '../Api';
 
 import * as httpClient from './HttpClientFetch';
@@ -7,16 +5,9 @@ import { ApiError } from '../../ApiError';
 import { Transport } from './Transport';
 import { HueApiRateLimits } from '../HueApiRateLimits';
 
-import { getSSLCertificate, SSLCertificate } from './sslCertificate';
 import { ConfigParameters } from '../HueApiConfig';
 import { cleanHostname, getHttpsUrl } from './urlUtil';
 import { time } from '@peter-murray/hue-bridge-model';
-
-const DEBUG: boolean = /node-hue-api/.test(process.env.NODE_DEBUG || '');
-
-const INITIAL_HTTPS_AGENT = new https.Agent({
-  rejectUnauthorized: false
-});
 
 export class LocalBootstrap {
 
@@ -59,48 +50,13 @@ export class LocalBootstrap {
         method: 'GET',
         url: `${baseUrl}api/config`,
         json: true,
-        httpsAgent: INITIAL_HTTPS_AGENT,
         timeout: getTimeout(timeout),
       }).then(res => {
         const bridgeId = res.data.bridgeid.toLowerCase();
 
-        return getSSLCertificate(hostname)
-          .then((cert: SSLCertificate) => {
-            const subjectCn = cert.subject.CN.toLowerCase();
-
-            if (DEBUG) {
-              console.log(
-                'Bridge Certificate:\n'
-                + `  subject:       ${JSON.stringify(cert.subject)}\n`
-                + `  issuer:        ${JSON.stringify(cert.subject)}\n`
-                + `  valid from:    ${cert.valid_from}\n`
-                + `  valid to:      ${cert.valid_to}\n`
-                + `  serial number: ${cert.serialNumber}\n`
-              );
-
-              console.log(`Performing validation of bridgeId "${bridgeId}" against certificate subject "${subjectCn}"; matched? ${subjectCn === bridgeId}`);
-            }
-
-            if (subjectCn === bridgeId) {
-              return new https.Agent({
-                keepAlive: true,
-                keepAliveMsecs: 10000,
-                maxSockets: 50,
-                // timeout: getTimeout(timeout), //node-fetch appears to ignore this
-                rejectUnauthorized: false,
-                // ca: cert.pemEncoded //TODO there are still issues here, as the certificate being self signed is failing somewhere deeper in TLS code
-              });
-            } else {
-              throw new ApiError('The hue bridge certificate does not match the expected issuer');
-            }
-          }).catch(error => {
-            throw new ApiError(error);
-          })
-          .then(agent => {
             const apiBaseUrl = `${baseUrl}api`
               , fetchConfig = {
                   baseURL: apiBaseUrl,
-                  httpsAgent: agent,
                   timeout: getTimeout(timeout)
                 }
               , transport = new Transport(httpClient.create(fetchConfig), this.rateLimits.transportRateLimit, username)
@@ -115,7 +71,6 @@ export class LocalBootstrap {
 
             return new Api(config, transport, this.rateLimits);
           });
-      });
   }
 }
 

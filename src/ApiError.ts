@@ -12,8 +12,6 @@ export class ApiError extends Error {
       super(message);
       this._hueError = error;
     }
-
-    Error.captureStackTrace(this, ApiError);
   }
 
   getHueError(): HueError | undefined {

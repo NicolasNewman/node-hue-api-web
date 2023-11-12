@@ -5,8 +5,6 @@ import { HueApiRateLimits } from '../HueApiRateLimits';
 import { ConfigParameters } from '../HueApiConfig';
 import { getHttpUrl } from './urlUtil';
 
-const SUPPRESS_WARNING = process.env.NODE_HUE_API_USE_INSECURE_CONNECTION != null;
-
 export class LocalInsecureBootstrap {
 
   readonly baseUrl: URL;
@@ -25,13 +23,6 @@ export class LocalInsecureBootstrap {
     const baseUrl = this.baseUrl
       , rateLimits = this.rateLimits
     ;
-
-    if (!SUPPRESS_WARNING) {
-      console.log('WARNING: You are using this library in an insecure way!\n'
-        + 'The Hue bridge supports HTTPS connections locally and it is highly recommended that you use an HTTPS\n'
-        + 'method to communicate with the bridge.'
-      );
-    }
 
     return request({method: 'GET', url: `${baseUrl.href}api/config`})
       .then(() => {

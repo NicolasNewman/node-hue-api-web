@@ -2,8 +2,6 @@ import { HueError } from './HueError';
 import { KeyValueType } from './commonTypes';
 import { ApiError } from './ApiError';
 
-const suppressDeprecationWarnings = process.env.NODE_HUE_API_SUPPRESS_DEPRICATION_WARNINGS || false;
-
 type ResponsePayloads = KeyValueType | KeyValueType[]
 
 /**
@@ -142,9 +140,6 @@ export function extractUpdatedAttributes(result: ResponsePayloads): KeyValueType
 // }
 
 export function deprecatedFunction(version: string, func: string, message: string) {
-  if (suppressDeprecationWarnings) {
-    return;
-  }
 
   console.log(`**************************************************************************************************`);
   console.log(`Deprecated Function Usage: ${func}\n`);

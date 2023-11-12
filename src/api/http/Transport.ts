@@ -97,7 +97,7 @@ function extractError(err: Error, response: FetchResult) {
   }
 
   const headers = response.headers
-    , authenticateHeader = headers ? headers['www-authenticate'] : null
+    , authenticateHeader = headers ? headers.get('www-authenticate') : null
   ;
 
   let hueError;

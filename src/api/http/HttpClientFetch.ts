@@ -1,54 +1,37 @@
-import fetch, { Response } from 'node-fetch';
-
-import {URLSearchParams} from 'url';
-import { Agent as HttpsAgent } from 'https';
-import { Agent as HttpAgent } from 'http';
 import HttpError from './HttpError';
-import { time } from '@peter-murray/hue-bridge-model';
 
-export type HTTPHeaders = {
-  [key: string]: string
-}
 
 type HttpClientFetchConfig = {
-  headers?: HTTPHeaders,
+  headers?: Headers,
   baseURL?: string,
-  httpAgent?: HttpAgent,
-  httpsAgent?: HttpsAgent,
   timeout?: number,
 }
 
-type AgentConfig = {
-  agent?: HttpAgent | HttpsAgent,
-  httpAgent?: HttpAgent,
-  httpsAgent?: HttpsAgent
-}
 
 export type RequestConfig = {
   json?: boolean
   data?: object | string
   url: string
-  headers?: HTTPHeaders
+  headers?: Headers
   method: string
   timeout?: number
   params?: { [key: string]: string }
   validateStatus?: Function,
   // transformResponse?: Function,
-} & AgentConfig
+};
 
 type FetchRequestConfig = {
   method?: string,
-  headers?: HTTPHeaders,
+  headers?: Headers,
   timeout?: number,
   body?: any,
-  agent?: HttpsAgent | HttpAgent,
 }
 
 export type FetchResult = {
   status: number,
   data?: any
   config?: { [key: string]: any },
-  headers?: HTTPHeaders
+  headers?: Headers
 }
 
 export class HttpClientFetch {
@@ -59,8 +42,8 @@ export class HttpClientFetch {
     this._config = config || {};
   }
 
-  get headers(): HTTPHeaders {
-    return this._config.headers || {};
+  get headers(): Headers {
+    return this._config.headers || new Headers();
   }
 
   get baseURL(): string | undefined {
@@ -80,20 +63,16 @@ export class HttpClientFetch {
 
   refreshAuthorizationHeader(token: string) {
     if (!this._config.headers) {
-      this._config.headers = {};
+      this._config.headers = new Headers();
     }
 
-    this._config.headers['Authorization'] = `Bearer ${token}`;
+    if (this._config.headers) {
+      this._config.headers.set('Authorization', `Bearer ${token}`);
+    }
   }
 
-  getAgent(url: string, config: RequestConfig): HttpsAgent | HttpAgent | undefined {
-    const specifiedAgent = config.agent || config.httpsAgent || config.httpAgent || undefined;
-
-    if (specifiedAgent) {
-      return specifiedAgent;
-    }
-
-    return this._config.httpsAgent || this._config.httpAgent || undefined;
+  getAgent(url: string, config: RequestConfig):  undefined {
+    return undefined;
   }
 
   getUrl(url: string): string {
@@ -129,8 +108,8 @@ export class HttpClientFetch {
     // if a timeout is not specified as part of the request.
 
     if (isJson) {
-      headers['Content-Type'] = 'application/json';
-      headers['Accept'] = 'application/json';
+      headers.set('Content-Type', 'application/json');
+      headers.set('Accept', 'application/json');
 
       if (hasData) {
         config.body = JSON.stringify(req.data);
@@ -145,16 +124,14 @@ export class HttpClientFetch {
       const requestHeaders = req.headers;
 
       Object.keys(requestHeaders).forEach(header => {
-        headers[header] = requestHeaders[header];
+        headers.set(header, requestHeaders.get('header') || '');
       });
     }
 
     if (req.params) {
       config.body = new URLSearchParams(req.params);
-      headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+      headers.set('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
     }
-
-    config.agent = this.getAgent(url, req);
 
     return fetch(url, config)
       .then((res: Response) => {
@@ -169,7 +146,7 @@ export class HttpClientFetch {
         // Process the result and then return the error object
         return resolveBodyPromise(res)
           .then(data => {
-            throw new HttpError(res.status, res.url, res.headers.raw(), data);
+            throw new HttpError(res.status, res.url, res.headers, data);
           });
       })
       .then((res: Response) => {
@@ -179,7 +156,7 @@ export class HttpClientFetch {
 
         if (res.headers) {
           // @ts-ignore
-          result.headers = res.headers.raw();
+          result.headers = res.headers;
         }
 
         return resolveBodyPromise(res)

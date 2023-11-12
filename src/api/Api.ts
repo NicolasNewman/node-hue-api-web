@@ -1,7 +1,5 @@
-import { Remote } from './Remote';
 import { Cache } from './Cache';
 import { ConfigParameters, HueApiConfig } from './HueApiConfig';
-import { RemoteApi } from './http/RemoteApi';
 import { Transport } from './http/Transport';
 import { Capabilities } from './Capabilities';
 import { Configuration } from './Configuration';
@@ -29,7 +27,6 @@ type ApiImplementationMap = {
   users: Users,
   rules: Rules,
   resourceLinks: ResourceLinks,
-  remote?: Remote,
 }
 
 export class Api {
@@ -46,8 +43,8 @@ export class Api {
 
   private _state?: Cache = undefined;
 
-  constructor(config: ConfigParameters, transport: Transport, rateLimits: HueApiRateLimits, remote?: RemoteApi) {
-    this._config = new HueApiConfig(config, transport, remote);
+  constructor(config: ConfigParameters, transport: Transport, rateLimits: HueApiRateLimits) {
+    this._config = new HueApiConfig(config, transport);
     this.rateLimitConfig = rateLimits;
 
     this._api = {
@@ -62,11 +59,6 @@ export class Api {
       rules: new Rules(this),
       resourceLinks: new ResourceLinks(this)
     };
-
-    // Add the remote API if this is a remote instance of the API
-    if (this._config.isRemote) {
-      this._api.remote = new Remote(this);
-    }
 
     //TODO initial investigation in to the Streaming API for Entertainment
     // if (config.clientkey) {
@@ -115,13 +107,6 @@ export class Api {
 
   get resourceLinks(): ResourceLinks {
     return this._api.resourceLinks;
-  }
-
-  /**
-   * Obtains the remote API endpoints, this will only be present if you have a remote connection established.
-   */
-  get remote(): Remote | undefined {
-    return this._api.remote;
   }
 
   /**
@@ -201,9 +186,5 @@ export class Api {
 
   _getTransport(): Transport {
     return this._config.transport;
-  }
-
-  _getRemote(): RemoteApi {
-    return this._config.remote;
   }
 }

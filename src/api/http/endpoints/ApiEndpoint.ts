@@ -1,12 +1,10 @@
-import { HTTPHeaders, RequestConfig } from '../HttpClientFetch';
+import { RequestConfig } from '../HttpClientFetch';
 import { Placeholder } from '../../placeholders/Placeholder';
 import { UsernamePlaceholder } from '../../placeholders/UsernamePlaceholder';
 
-const DEBUG: boolean = /node-hue-api/.test(process.env['NODE_DEBUG'] || '');
-
 type ApiEndpointDefinition = {
   placeholders: Placeholder[],
-  headers: HTTPHeaders,
+  headers: Headers,
   url?: string,
   method?: string,
   json?: boolean,
@@ -30,7 +28,7 @@ export class ApiEndpoint {
   constructor() {
     this._data = {
       placeholders: [new UsernamePlaceholder()],
-      headers: {}
+      headers: new Headers()
     };
   }
 
@@ -102,7 +100,7 @@ export class ApiEndpoint {
   }
 
   setHeader(name: string, value: string) {
-    this._getData().headers[name] = value;
+    this._getData().headers.set(name, value);
     return this;
   }
 
@@ -129,31 +127,11 @@ export class ApiEndpoint {
       config.data = payload.body;
       if (payload.type) {
         if (config.headers) {
-          config.headers['Content-Type'] = payload.type;
+          config.headers.set('Content-Type', payload.type);
         } else {
-          config.headers = {'Content-Type': payload.type};
+          config.headers = new Headers({'Content-Type': payload.type})
         }
       }
-    }
-
-    if (DEBUG) {
-      if (data.placeholders) {
-        //TODO redact the username from logs, although it would still appear in the URL...
-        console.log('URL Placeholders:');
-        data.placeholders.forEach(placeholder => {
-          console.log(`  ${placeholder.toString()}`);
-        });
-      }
-
-      if (config.headers) {
-        console.log(`Headers: ${JSON.stringify(config.headers)}`);
-      }
-    }
-
-    if (data.statusCode) {
-      config.validateStatus = function(status: number) {
-        return status === data.statusCode;
-      };
     }
 
     return config;
@@ -174,7 +152,7 @@ export class ApiEndpoint {
 
   requiresJsonConversion() {
     const data = this._getData();
-    return data.json || (data.headers && data.headers['Accept'] === 'application/json');
+    return data.json || (data.headers && data.headers.set('Accept', 'application/json'));
   }
 
   get successCode(): number {

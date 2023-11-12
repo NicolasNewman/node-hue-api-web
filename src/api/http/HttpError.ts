@@ -4,11 +4,11 @@ export default class HttpError extends Error {
 
   public readonly url: string;
 
-  public readonly headers?: { [k: string]: string[] };
+  public readonly headers?: Headers
 
   public readonly data?: string;
 
-  constructor(status: number, url: string, headers?: { [k: string]: string[] }, data?: any) {
+  constructor(status: number, url: string, headers?: Headers, data?: any) {
     super();
 
     this.status = status;

@@ -1,18 +1,8 @@
 import { LocalBootstrap } from './http/LocalBootstrap';
 import { LocalInsecureBootstrap } from './http/LocalInsecureBootstrap';
-import { RemoteBootstrap } from './http/RemoteBootstrap';
 import { HueApiRateLimits } from './HueApiRateLimits';
 
 const DEFAULT_RATE_LIMIT_CONFIG = new HueApiRateLimits();
-
-/**
- * Creates a remote bootstrap to connect with a Hue bridge remotely
- * @param clientId The OAuth client id for your application.
- * @param clientSecret The OAuth client secret for your application.
- */
-export function createRemote(clientId: string, clientSecret: string, rateLimits?: HueApiRateLimits): RemoteBootstrap {
-  return new RemoteBootstrap(clientId, clientSecret, rateLimits || DEFAULT_RATE_LIMIT_CONFIG);
-}
 
 /**
  * Creates a local network bootstrap to connect with Hue bridge on a local network.
